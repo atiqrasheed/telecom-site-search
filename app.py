@@ -1,56 +1,79 @@
+import re
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Daily Site Search", page_icon="🔍", layout="wide")
+# Set page title and layout
+st.set_page_config(page_title="Site Search Tool", layout="wide")
 
-# Custom CSS to hide default sidebar navigation and header elements
-st.markdown("""
+st.title("📡 Daily Site Stats Search")
+
+# Custom CSS styling
+st.markdown(
+    """
     <style>
-    [data-testid="stSidebarNav"] {display: none !important;}
-    header[data-testid="stHeader"] {display: none !important;}
-    #stDecoration {display: none !important;}
-    .stApp > footer {display: none !important;}
+    div[data-testid="stTextInput"] label p {
+        font-size: 22px !important;
+        font-weight: bold !important;
+    }
+    .stAppDeployButton { display: none !important; }
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# Top Navigation Bar
-col1, col2, col3 = st.columns([1, 1, 4])
-with col1:
-    st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
-with col2:
-    st.page_link("pages/1_Hourly_Stats.py", label="📊 Hourly Stats", use_container_width=True)
+# Daily CSV File Uploader
+uploaded_file = st.file_uploader(
+    "Upload Today's CSV File", type=["csv"], help="Select today's site report"
+)
 
-st.divider()
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
 
-st.title("🔍 Daily Site Search")
+    # Dynamic identification of the availability column
+    avail_col = [col for col in df.columns if "Availability" in col]
+    availability_column = avail_col[0] if avail_col else df.columns[-1]
 
-@st.cache_data(ttl=3600)
-def load_daily_data():
-    df = pd.read_csv("test.csv", skiprows=1, encoding="cp1252")
-    df.columns = df.columns.str.strip()
-    
-    site_col = [col for col in df.columns if 'site' in col.lower()]
-    if site_col:
-        df.rename(columns={site_col[0]: 'Site'}, inplace=True)
-        
-    df['Site'] = df['Site'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
-    return df
+    # Search bar input box
+    site_input = st.text_input("Enter Site ID:", "")
 
-try:
-    df_daily = load_daily_data()
+    if site_input.strip():
+        clean_site = site_input.strip()
 
-    site_id = st.text_input("Enter Site Number (e.g., 0001):")
+        # Exact match regex pattern
+        pattern = rf"(?<!\d){re.escape(clean_site)}(?!\d)"
+        filtered_df = df[
+            df["Site ID (EUtranCellFDD)"].str.contains(
+                pattern, regex=True, na=False
+            )
+        ].copy()
 
-    if site_id.strip():
-        search_term = site_id.strip()
-        filtered_df = df_daily[df_daily['Site'] == search_term]
-        
-        if not filtered_df.empty:
-            st.dataframe(filtered_df, use_container_width=True)
+        count = len(filtered_df)
+
+        if count > 0:
+            st.success(
+                f"Found **{count}** exact matching cells for Site **{clean_site}**"
+            )
+
+            # Calculate average and append summary row
+            avg_value = round(filtered_df[availability_column].mean(), 2)
+            summary_row = {
+                df.columns[0]: "",
+                "Site ID (EUtranCellFDD)": "AVERAGE SITE AVAILABILITY",
+                availability_column: f"{avg_value}%",
+            }
+
+            display_df = pd.concat(
+                [filtered_df, pd.DataFrame([summary_row])], ignore_index=True
+            )
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
         else:
-            st.warning(f"No daily records found for Site {search_term}.")
+            st.warning(
+                f"No exact matches found for Site '{clean_site}'. Try another site ID."
+            )
     else:
-        st.info("Enter a site number above to display daily stats.")
-
-except Exception as e:
-    st.error(f"Error loading file: {e}")
+        st.info("Please enter a site number above to view results.")
+else:
+    st.info("Please upload today's CSV file above to begin searching.")
