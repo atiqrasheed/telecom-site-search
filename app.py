@@ -37,7 +37,7 @@ st.markdown("""
 # Set page title and layout
 st.set_page_config(page_title="Site Search Tool", layout="wide")
 
-st.title("📡 Daily Site Stats Search")
+st.title("📡 4G Cell FDD")
 
 # Custom CSS styling
 st.markdown(
