@@ -11,11 +11,18 @@ st.title("📡 Daily Site Stats Search")
 st.markdown(
     """
     <style>
+    /* Target the text label above the search bar */
     div[data-testid="stTextInput"] label p {
         font-size: 22px !important;
         font-weight: bold !important;
     }
-    .stAppDeployButton { display: none !important; }
+
+    /* Hide the Deploy button */
+    .stAppDeployButton {
+        display: none !important;
+    }
+
+    /* Hide header menu and footer */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -24,15 +31,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Daily CSV File Uploader
-uploaded_file = st.file_uploader(
-    "Upload Today's CSV File", type=["csv"], help="Select today's site report"
-)
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+# Load CSV data efficiently
+@st.cache_data
+def load_data():
+    return pd.read_csv("test.csv")
 
-    # Dynamic identification of the availability column
+
+try:
+    df = load_data()
+
+    # Dynamic identification of the availability column name
     avail_col = [col for col in df.columns if "Availability" in col]
     availability_column = avail_col[0] if avail_col else df.columns[-1]
 
@@ -57,17 +66,21 @@ if uploaded_file is not None:
                 f"Found **{count}** exact matching cells for Site **{clean_site}**"
             )
 
-            # Calculate average and append summary row
+            # Calculate average and create summary row
             avg_value = round(filtered_df[availability_column].mean(), 2)
+
             summary_row = {
                 df.columns[0]: "",
                 "Site ID (EUtranCellFDD)": "AVERAGE SITE AVAILABILITY",
                 availability_column: f"{avg_value}%",
             }
 
+            # Append summary row at the bottom of the table
             display_df = pd.concat(
                 [filtered_df, pd.DataFrame([summary_row])], ignore_index=True
             )
+
+            # Display table with the summary row inside
             st.dataframe(display_df, use_container_width=True, hide_index=True)
         else:
             st.warning(
@@ -75,5 +88,6 @@ if uploaded_file is not None:
             )
     else:
         st.info("Please enter a site number above to view results.")
-else:
-    st.info("Please upload today's CSV file above to begin searching.")
+
+except FileNotFoundError:
+    st.error("Error: 'test.csv' was not found in the project folder.")
