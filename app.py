@@ -4,6 +4,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="4G Cell FDD", 
+    page_icon="📡", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -31,7 +32,7 @@ with col2:
 
 st.divider()
 
-st.title("📡 Daily Site Stats Search")
+st.title("📡 Daily Site Stats")
 
 @st.cache_data
 def load_data():
