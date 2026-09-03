@@ -5,7 +5,7 @@ import streamlit as st
 
 # Configure the browser tab title and favicon
 st.set_page_config(
-    page_title="Telecom Site Search",
+    page_title="4G Cell FDD",
     page_icon="📡",
     layout="wide"
 )
