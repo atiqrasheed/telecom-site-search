@@ -1,19 +1,46 @@
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Hourly Stats", page_icon="📊", layout="wide")
+# Set page title, layout, and default collapsed sidebar state
+st.set_page_config(
+    page_title="Hourly Stats", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# Custom CSS to hide default sidebar nav and header styling
-st.markdown("""
+# Custom CSS styling to completely hide sidebar container and toggle arrow
+st.markdown(
+    """
     <style>
-    [data-testid="stSidebarNav"] {display: none !important;}
-    header[data-testid="stHeader"] {display: none !important;}
-    #stDecoration {display: none !important;}
-    .stApp > footer {display: none !important;}
-    </style>
-""", unsafe_allow_html=True)
+    /* Completely hide the sidebar container and collapse arrow */
+    [data-testid="stSidebar"] {
+        display: none !important;
+    }
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
 
-# Top navigation bar
+    /* Target the text label above input boxes */
+    div[data-testid="stTextInput"] label p {
+        font-size: 22px !important;
+        font-weight: bold !important;
+    }
+
+    /* Hide the Deploy button */
+    .stAppDeployButton {
+        display: none !important;
+    }
+
+    /* Hide header menu and footer */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
+# Top Navigation Bar
 col1, col2, col3 = st.columns([1, 1, 4])
 with col1:
     st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
@@ -22,12 +49,18 @@ with col2:
 
 st.divider()
 
-st.title("📊 Hourly Site Statistics")
+st.title("📊 Hourly Site Stats")
 
 @st.cache_data(ttl=3600)
 def load_hourly_data():
-    df = pd.read_csv("pages/hourly_stats.csv", skiprows=1, dtype={"Site": str}, encoding="cp1252")
+    df = pd.read_csv("pages/hourly_stats.csv", skiprows=1, encoding="cp1252")
     df.columns = df.columns.str.strip()
+    
+    site_col = [col for col in df.columns if 'site' in col.lower()]
+    if site_col:
+        df.rename(columns={site_col[0]: 'Site'}, inplace=True)
+        
+    df['Site'] = df['Site'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
     return df
 
 try:
@@ -40,11 +73,13 @@ try:
         filtered_df = df_hourly[df_hourly['Site'] == search_term]
         
         if not filtered_df.empty:
-            st.dataframe(filtered_df, use_container_width=True)
+            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
         else:
             st.warning(f"No hourly records found for Site {search_term}.")
     else:
         st.info("Enter a site number above to display hourly stats.")
 
+except FileNotFoundError:
+    st.error("Error: 'pages/hourly_stats.csv' was not found in the pages folder.")
 except Exception as e:
     st.error(f"Error loading file: {e}")
