@@ -3,7 +3,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Hourly Stats", page_icon="📊", layout="wide")
 
-# Custom CSS to hide default sidebar nav and styling
+# Custom CSS to hide default sidebar nav and header styling
 st.markdown("""
     <style>
     [data-testid="stSidebarNav"] {display: none !important;}
@@ -26,7 +26,6 @@ st.title("📊 Hourly Site Statistics")
 
 @st.cache_data(ttl=3600)
 def load_hourly_data():
-    # Added encoding="cp1252" to fix the utf-8 decoding error
     df = pd.read_csv("pages/hourly_stats.csv", skiprows=1, dtype={"Site": str}, encoding="cp1252")
     df.columns = df.columns.str.strip()
     return df
@@ -36,7 +35,7 @@ try:
 
     site_id = st.text_input("Enter Site Number (e.g., 0001):")
 
-    if site_id:
+    if site_id.strip():
         search_term = site_id.strip()
         filtered_df = df_hourly[df_hourly['Site'] == search_term]
         
@@ -45,7 +44,7 @@ try:
         else:
             st.warning(f"No hourly records found for Site {search_term}.")
     else:
-        st.dataframe(df_hourly.head(100), use_container_width=True)
+        st.info("Enter a site number above to display hourly stats.")
 
 except Exception as e:
     st.error(f"Error loading file: {e}")
