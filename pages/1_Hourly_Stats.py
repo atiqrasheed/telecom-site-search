@@ -7,13 +7,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Custom CSS styling
 st.markdown(
     """
     <style>
+    /* Completely hide the sidebar container and collapse arrow */
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
-    div[data-testid="stTextInput"] label p { font-size: 22px !important; font-weight: bold !important; }
+
+    /* Target the text label above input boxes */
+    div[data-testid="stTextInput"] label p {
+        font-size: 22px !important;
+        font-weight: bold !important;
+    }
+
+    /* Hide the Deploy button */
     .stAppDeployButton { display: none !important; }
+
+    /* Hide header menu and footer */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -22,6 +33,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Top Navigation Bar
 col1, col2, col3 = st.columns([1, 1, 4])
 with col1:
     st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
@@ -47,14 +59,48 @@ def load_hourly_data():
 try:
     df_hourly = load_hourly_data()
 
+    # Identify the availability column dynamically
+    avail_col = [col for col in df_hourly.columns if "Availability" in col or "%" in col]
+    availability_column = avail_col[0] if avail_col else df_hourly.columns[-1]
+
     site_id = st.text_input("Enter Site Number (e.g., 0001):")
 
     if site_id.strip() != "":
         search_term = site_id.strip()
-        filtered_df = df_hourly[df_hourly['Site'].astype(str) == search_term]
+        filtered_df = df_hourly[df_hourly['Site'].astype(str) == search_term].copy()
         
-        if not filtered_df.empty:
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+        count = len(filtered_df)
+
+        if count > 0:
+            st.success(f"Found **{count}** exact matching hourly records for Site **{search_term}**")
+
+            # Calculate average and append summary row at bottom
+            numeric_avail = pd.to_numeric(filtered_df[availability_column], errors='coerce')
+            avg_value = round(numeric_avail.mean(), 2)
+
+            summary_row = {
+                filtered_df.columns[0]: "",
+                "Site": "AVERAGE SITE AVAILABILITY",
+                availability_column: f"{avg_value}%" if pd.notna(avg_value) else "N/A",
+            }
+
+            display_df = pd.concat(
+                [filtered_df, pd.DataFrame([summary_row])], ignore_index=True
+            )
+
+            # Fit 3 columns cleanly across screen width without scrollbars
+            col_configs = {
+                df_hourly.columns[0]: st.column_config.TextColumn(width="medium"),
+                "Site": st.column_config.TextColumn(width="large"),
+                availability_column: st.column_config.TextColumn(width="medium")
+            }
+
+            st.dataframe(
+                display_df, 
+                use_container_width=True, 
+                hide_index=True,
+                column_config=col_configs
+            )
         else:
             st.warning(f"No hourly records found for Site {search_term}.")
     else:
