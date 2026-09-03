@@ -5,7 +5,7 @@ import streamlit as st
 
 # Configure the browser tab title and favicon
 st.set_page_config(
-    page_title="sites",
+    page_title="4G Cell FDD",
     page_icon="📡",
     layout="wide"
 )
@@ -35,7 +35,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Set page title and layout
-st.set_page_config(page_title="Site Search Tool", layout="wide")
+st.set_page_config(page_title="4G Cell FDD", layout="wide")
 
 st.title("📡 Daily Site Search")
 
