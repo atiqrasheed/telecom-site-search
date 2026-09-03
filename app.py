@@ -26,9 +26,17 @@ st.title("🔍 Daily Site Search")
 
 @st.cache_data(ttl=3600)
 def load_daily_data():
-    # Adjust path if test.csv is in root or pages/
+    # Read test.csv directly from root
     df = pd.read_csv("test.csv", skiprows=1, dtype={"Site": str}, encoding="cp1252")
+    
+    # Strip whitespace from column headers
     df.columns = df.columns.str.strip()
+    
+    # Automatically handle case variations in the column name (e.g. 'site', 'Site ')
+    site_col = [col for col in df.columns if 'site' in col.lower()]
+    if site_col:
+        df.rename(columns={site_col[0]: 'Site'}, inplace=True)
+        
     return df
 
 try:
