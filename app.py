@@ -2,37 +2,19 @@ import re
 import pandas as pd
 import streamlit as st
 
-# Set page title, layout, and default collapsed sidebar state
 st.set_page_config(
     page_title="Site Search Tool", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS styling
 st.markdown(
     """
     <style>
-    /* Completely hide the sidebar container and collapse arrow */
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-    [data-testid="collapsedControl"] {
-        display: none !important;
-    }
-
-    /* Target the text label above the search bar */
-    div[data-testid="stTextInput"] label p {
-        font-size: 22px !important;
-        font-weight: bold !important;
-    }
-
-    /* Hide the Deploy button */
-    .stAppDeployButton {
-        display: none !important;
-    }
-
-    /* Hide header menu and footer */
+    [data-testid="stSidebar"] { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    div[data-testid="stTextInput"] label p { font-size: 22px !important; font-weight: bold !important; }
+    .stAppDeployButton { display: none !important; }
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -41,7 +23,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Top Navigation Bar
 col1, col2, col3 = st.columns([1, 1, 4])
 with col1:
     st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
@@ -52,30 +33,26 @@ st.divider()
 
 st.title("📡 Daily Site Stats Search")
 
-
-# Load CSV data efficiently
 @st.cache_data
 def load_data():
     return pd.read_csv("test.csv")
 
-
 try:
     df = load_data()
 
-    # Dynamic identification of the availability column name
     avail_col = [col for col in df.columns if "Availability" in col]
     availability_column = avail_col[0] if avail_col else df.columns[-1]
 
-    # Search bar input box
     site_input = st.text_input("Enter Site ID:", "")
 
-    if site_input.strip():
+    # Check explicitly if input is not empty (allows '0')
+    if site_input.strip() != "":
         clean_site = site_input.strip()
 
-        # Exact match regex pattern
+        # Regex matching cast explicitly to string column
         pattern = rf"(?<!\d){re.escape(clean_site)}(?!\d)"
         filtered_df = df[
-            df["Site ID (EUtranCellFDD)"].str.contains(
+            df["Site ID (EUtranCellFDD)"].astype(str).str.contains(
                 pattern, regex=True, na=False
             )
         ].copy()
@@ -87,21 +64,20 @@ try:
                 f"Found **{count}** exact matching cells for Site **{clean_site}**"
             )
 
-            # Calculate average and create summary row
-            avg_value = round(filtered_df[availability_column].mean(), 2)
+            # Convert numeric column explicitly before mean calculation
+            numeric_avail = pd.to_numeric(filtered_df[availability_column], errors='coerce')
+            avg_value = round(numeric_avail.mean(), 2)
 
             summary_row = {
                 df.columns[0]: "",
                 "Site ID (EUtranCellFDD)": "AVERAGE SITE AVAILABILITY",
-                availability_column: f"{avg_value}%",
+                availability_column: f"{avg_value}%" if pd.notna(avg_value) else "N/A",
             }
 
-            # Append summary row at the bottom of the table
             display_df = pd.concat(
                 [filtered_df, pd.DataFrame([summary_row])], ignore_index=True
             )
 
-            # Display table with the summary row inside
             st.dataframe(display_df, use_container_width=True, hide_index=True)
         else:
             st.warning(
