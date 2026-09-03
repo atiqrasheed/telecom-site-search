@@ -5,12 +5,15 @@ import streamlit as st
 # Set page title and layout
 st.set_page_config(page_title="Site Search Tool", layout="wide")
 
-st.title("📡 Daily Site Stats Search")
-
 # Custom CSS styling
 st.markdown(
     """
     <style>
+    /* Hide default sidebar navigation */
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+
     /* Target the text label above the search bar */
     div[data-testid="stTextInput"] label p {
         font-size: 22px !important;
@@ -30,6 +33,17 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+# Top Navigation Bar
+col1, col2, col3 = st.columns([1, 1, 4])
+with col1:
+    st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
+with col2:
+    st.page_link("pages/1_Hourly_Stats.py", label="📊 Hourly Stats", use_container_width=True)
+
+st.divider()
+
+st.title("📡 Daily Site Stats Search")
 
 
 # Load CSV data efficiently
