@@ -71,7 +71,7 @@ try:
     availability_column = avail_col[0] if avail_col else df.columns[-1]
 
     # Search bar input box
-    site_input = st.text_input("Enter Site ID:", "")
+    site_input = st.text_input("Enter Site :", "")
 
     if site_input.strip():
         clean_site = site_input.strip()
@@ -115,4 +115,4 @@ try:
         st.info("Please enter a site number above to view results.")
 
 except FileNotFoundError:
-    st.error("Error: 'test.csv' was not found in the project folder.")
+    st.error("Error: 'test.csv' was not uploaded in the project folder.")
