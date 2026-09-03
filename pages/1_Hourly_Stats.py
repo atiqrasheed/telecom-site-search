@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Hourly Stats", 
+    page_title="4G Cell FDD", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
