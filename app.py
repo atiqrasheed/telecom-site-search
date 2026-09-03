@@ -3,6 +3,25 @@ import streamlit as st
 
 st.set_page_config(page_title="Daily Site Search", page_icon="🔍", layout="wide")
 
+# Custom CSS to hide default sidebar navigation and header elements
+st.markdown("""
+    <style>
+    [data-testid="stSidebarNav"] {display: none !important;}
+    header[data-testid="stHeader"] {display: none !important;}
+    #stDecoration {display: none !important;}
+    .stApp > footer {display: none !important;}
+    </style>
+""", unsafe_allow_html=True)
+
+# Top Navigation Bar
+col1, col2, col3 = st.columns([1, 1, 4])
+with col1:
+    st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
+with col2:
+    st.page_link("pages/1_Hourly_Stats.py", label="📊 Hourly Stats", use_container_width=True)
+
+st.divider()
+
 st.title("🔍 Daily Site Search")
 
 @st.cache_data(ttl=3600)
