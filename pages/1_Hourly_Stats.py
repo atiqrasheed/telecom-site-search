@@ -1,37 +1,19 @@
 import pandas as pd
 import streamlit as st
 
-# Set page title, layout, and default collapsed sidebar state
 st.set_page_config(
     page_title="Hourly Stats", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS styling to completely hide sidebar container and toggle arrow
 st.markdown(
     """
     <style>
-    /* Completely hide the sidebar container and collapse arrow */
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-    [data-testid="collapsedControl"] {
-        display: none !important;
-    }
-
-    /* Target the text label above input boxes */
-    div[data-testid="stTextInput"] label p {
-        font-size: 22px !important;
-        font-weight: bold !important;
-    }
-
-    /* Hide the Deploy button */
-    .stAppDeployButton {
-        display: none !important;
-    }
-
-    /* Hide header menu and footer */
+    [data-testid="stSidebar"] { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    div[data-testid="stTextInput"] label p { font-size: 22px !important; font-weight: bold !important; }
+    .stAppDeployButton { display: none !important; }
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -40,7 +22,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Top Navigation Bar
 col1, col2, col3 = st.columns([1, 1, 4])
 with col1:
     st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
@@ -68,9 +49,9 @@ try:
 
     site_id = st.text_input("Enter Site Number (e.g., 0001):")
 
-    if site_id.strip():
+    if site_id.strip() != "":
         search_term = site_id.strip()
-        filtered_df = df_hourly[df_hourly['Site'] == search_term]
+        filtered_df = df_hourly[df_hourly['Site'].astype(str) == search_term]
         
         if not filtered_df.empty:
             st.dataframe(filtered_df, use_container_width=True, hide_index=True)
