@@ -16,6 +16,20 @@ st.markdown(
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
 
+    /* Target top navigation links for hover zoom & color effects */
+    div[data-testid="stPageLink"] a {
+        transition: all 0.25s ease-in-out !important;
+        border-radius: 8px !important;
+    }
+
+    /* Hover effect: Smooth scale up and background glow */
+    div[data-testid="stPageLink"] a:hover {
+        transform: scale(1.06) !important; /* Increases size by 6% */
+        background-color: #1f2937 !important;
+        color: #38bdf8 !important;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+
     /* Target the text label above input boxes */
     div[data-testid="stTextInput"] label p {
         font-size: 22px !important;
