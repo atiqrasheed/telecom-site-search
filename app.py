@@ -26,17 +26,16 @@ st.title("🔍 Daily Site Search")
 
 @st.cache_data(ttl=3600)
 def load_daily_data():
-    # Read test.csv from root without skipping rows
-    df = pd.read_csv("test.csv", dtype=str, encoding="cp1252")
-    
-    # Strip whitespace from column headers
+    df = pd.read_csv("test.csv", encoding="cp1252")
     df.columns = df.columns.str.strip()
     
-    # Auto-map case variations (e.g., 'site', 'Site ID')
+    # Identify 'Site' column flexibly
     site_col = [col for col in df.columns if 'site' in col.lower()]
     if site_col:
         df.rename(columns={site_col[0]: 'Site'}, inplace=True)
         
+    # Clean the Site column data to ensure standard string comparison
+    df['Site'] = df['Site'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
     return df
 
 try:
@@ -46,6 +45,8 @@ try:
 
     if site_id.strip():
         search_term = site_id.strip()
+        
+        # Original matching logic with string cleaning
         filtered_df = df_daily[df_daily['Site'] == search_term]
         
         if not filtered_df.empty:
