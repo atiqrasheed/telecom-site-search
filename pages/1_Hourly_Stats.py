@@ -63,7 +63,7 @@ try:
     avail_col = [col for col in df_hourly.columns if "Availability" in col or "%" in col]
     availability_column = avail_col[0] if avail_col else df_hourly.columns[-1]
 
-    site_id = st.text_input("Enter Site Number (e.g., 0001):")
+    site_id = st.text_input("Enter Site ID: ")
 
     if site_id.strip() != "":
         search_term = site_id.strip()
