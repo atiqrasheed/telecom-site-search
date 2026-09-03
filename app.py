@@ -2,15 +2,22 @@ import re
 import pandas as pd
 import streamlit as st
 
-# Set page title and layout
-st.set_page_config(page_title="Site Search Tool", layout="wide")
+# Set page title, layout, and default collapsed sidebar state
+st.set_page_config(
+    page_title="Site Search Tool", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
 # Custom CSS styling
 st.markdown(
     """
     <style>
-    /* Hide default sidebar navigation */
-    [data-testid="stSidebarNav"] {
+    /* Completely hide the sidebar container and collapse arrow */
+    [data-testid="stSidebar"] {
+        display: none !important;
+    }
+    [data-testid="collapsedControl"] {
         display: none !important;
     }
 
