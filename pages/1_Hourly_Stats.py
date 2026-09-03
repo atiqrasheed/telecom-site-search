@@ -33,6 +33,19 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Fit columns tightly across screen width
+            col_configs = {
+                df_hourly.columns[0]: st.column_config.TextColumn(width="small"),
+                "Site": st.column_config.TextColumn(width="small"),
+                availability_column: st.column_config.TextColumn(width="small")
+            }
+
+            st.dataframe(
+                display_df, 
+                use_container_width=True, 
+                hide_index=True,
+                column_config=col_configs
+            )
 # Top Navigation Bar
 col1, col2, col3 = st.columns([1, 1, 4])
 with col1:
