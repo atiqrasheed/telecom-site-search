@@ -2,7 +2,14 @@ import re
 import pandas as pd
 import streamlit as st
 
-import streamlit as st
+
+# Configure the browser tab title and favicon
+st.set_page_config(
+    page_title="Telecom Site Search",
+    page_icon="📡",
+    layout="wide"
+)
+
 
 st.markdown("""
     <style>
