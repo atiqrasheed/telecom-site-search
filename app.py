@@ -2,22 +2,27 @@ import re
 import pandas as pd
 import streamlit as st
 
-# Inject custom CSS to hide all Streamlit branding, profile badges, and headers
+import streamlit as st
+
 st.markdown("""
     <style>
-    /* Hide the top header bar and red accent line */
+    /* Hide top header bar & red decoration line */
     header[data-testid="stHeader"] {display: none !important;}
     #stDecoration {display: none !important;}
-    
-    /* Hide the bottom-right viewer badge / profile avatar icon */
+
+    /* Hide the entire bottom-right floating badge overlay */
+    div[class*="viewerBadge"] {display: none !important;}
+    div[class*="stStatusWidget"] {display: none !important;}
     [data-testid="stStatusWidget"] {display: none !important;}
-    .viewerBadge_container__1QSob {display: none !important;}
-    .viewerBadge_link__1S137 {display: none !important;}
     
-    /* Hide default footer */
-    footer {visibility: hidden !important;}
+    /* Target and remove the bottom toolbar container */
+    .stApp > footer {display: none !important;}
+    footer {display: none !important; visibility: hidden !important;}
     
-    /* Remove extra space at the top of the page */
+    /* Extra safeguard to hide any element pinned to the bottom right */
+    iframe[title="streamlit_app"] ~ div {display: none !important;}
+    
+    /* Remove extra space at top */
     .block-container {padding-top: 1rem !important;}
     </style>
     """, unsafe_allow_html=True)
