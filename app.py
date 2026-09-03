@@ -2,6 +2,26 @@ import re
 import pandas as pd
 import streamlit as st
 
+# Inject custom CSS to hide all Streamlit branding, profile badges, and headers
+st.markdown("""
+    <style>
+    /* Hide the top header bar and red accent line */
+    header[data-testid="stHeader"] {display: none !important;}
+    #stDecoration {display: none !important;}
+    
+    /* Hide the bottom-right viewer badge / profile avatar icon */
+    [data-testid="stStatusWidget"] {display: none !important;}
+    .viewerBadge_container__1QSob {display: none !important;}
+    .viewerBadge_link__1S137 {display: none !important;}
+    
+    /* Hide default footer */
+    footer {visibility: hidden !important;}
+    
+    /* Remove extra space at the top of the page */
+    .block-container {padding-top: 1rem !important;}
+    </style>
+    """, unsafe_allow_html=True)
+
 # Set page title and layout
 st.set_page_config(page_title="Site Search Tool", layout="wide")
 
