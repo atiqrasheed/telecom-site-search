@@ -3,38 +3,17 @@ import streamlit as st
 
 st.set_page_config(page_title="Daily Site Search", page_icon="🔍", layout="wide")
 
-# Custom CSS to hide default sidebar navigation and header elements
-st.markdown("""
-    <style>
-    [data-testid="stSidebarNav"] {display: none !important;}
-    header[data-testid="stHeader"] {display: none !important;}
-    #stDecoration {display: none !important;}
-    .stApp > footer {display: none !important;}
-    </style>
-""", unsafe_allow_html=True)
-
-# Top Navigation Bar
-col1, col2, col3 = st.columns([1, 1, 4])
-with col1:
-    st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
-with col2:
-    st.page_link("pages/1_Hourly_Stats.py", label="📊 Hourly Stats", use_container_width=True)
-
-st.divider()
-
 st.title("🔍 Daily Site Search")
 
 @st.cache_data(ttl=3600)
 def load_daily_data():
-    df = pd.read_csv("test.csv", encoding="cp1252")
+    df = pd.read_csv("test.csv", skiprows=1, encoding="cp1252")
     df.columns = df.columns.str.strip()
     
-    # Identify 'Site' column flexibly
     site_col = [col for col in df.columns if 'site' in col.lower()]
     if site_col:
         df.rename(columns={site_col[0]: 'Site'}, inplace=True)
         
-    # Clean the Site column data to ensure standard string comparison
     df['Site'] = df['Site'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
     return df
 
@@ -45,8 +24,6 @@ try:
 
     if site_id.strip():
         search_term = site_id.strip()
-        
-        # Original matching logic with string cleaning
         filtered_df = df_daily[df_daily['Site'] == search_term]
         
         if not filtered_df.empty:
