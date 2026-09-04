@@ -9,19 +9,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+if "daily_search_value" not in st.session_state:
+    st.session_state["daily_search_value"] = ""
+
 st.markdown(
     """
     <style>
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
     
-    /* Target top navigation links for hover zoom & color effects */
     div[data-testid="stPageLink"] a {
         transition: all 0.25s ease-in-out !important;
         border-radius: 8px !important;
     }
 
-    /* Hover effect: Size increase & color highlight */
     div[data-testid="stPageLink"] a:hover {
         transform: scale(1.06) !important;
         background-color: #1f2937 !important;
@@ -59,17 +60,23 @@ try:
     avail_col = [col for col in df.columns if "Availability" in col]
     availability_column = avail_col[0] if avail_col else df.columns[-1]
 
-    # Compact search input (~12.5% width)
-    search_col, _ = st.columns([1, 7])
+    search_col, metric_col, _ = st.columns([1.5, 2, 4.5])
+    
     with search_col:
-        site_input = st.text_input("Enter Site ID:", "")
+        def update_daily_input():
+            st.session_state["daily_search_value"] = st.session_state["daily_input_key"]
 
-    # Check explicitly if input is not empty (allows '0')
-    if site_input.strip() != "":
-        clean_site = site_input.strip()
+        site_input = st.text_input(
+            "Enter Site ID:", 
+            value=st.session_state["daily_search_value"],
+            key="daily_input_key",
+            on_change=update_daily_input
+        )
 
-        # Regex matching cast explicitly to string column
-        pattern = rf"(?<!\d){re.escape(clean_site)}(?!\d)"
+    current_search = st.session_state["daily_search_value"].strip()
+
+    if current_search != "":
+        pattern = rf"(?<!\d){re.escape(current_search)}(?!\d)"
         filtered_df = df[
             df["Site ID (EUtranCellFDD)"].astype(str).str.contains(
                 pattern, regex=True, na=False
@@ -79,28 +86,34 @@ try:
         count = len(filtered_df)
 
         if count > 0:
-            st.success(
-                f"Found **{count}** exact matching cells for Site **{clean_site}**"
-            )
-
-            # Convert numeric column explicitly before mean calculation
             numeric_avail = pd.to_numeric(filtered_df[availability_column], errors='coerce')
             avg_value = round(numeric_avail.mean(), 2)
 
-            summary_row = {
-                df.columns[0]: "",
-                "Site ID (EUtranCellFDD)": "AVERAGE SITE AVAILABILITY",
-                availability_column: f"{avg_value}%" if pd.notna(avg_value) else "N/A",
-            }
+            with metric_col:
+                st.metric(
+                    label="Average Site Availability", 
+                    value=f"{avg_value}%" if pd.notna(avg_value) else "N/A"
+                )
 
-            display_df = pd.concat(
-                [filtered_df, pd.DataFrame([summary_row])], ignore_index=True
+            st.success(
+                f"Found **{count}** exact matching cells for Site **{current_search}**"
             )
 
-            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            col_configs = {
+                availability_column: st.column_config.TextColumn(
+                    alignment="left"
+                )
+            }
+
+            st.dataframe(
+                filtered_df, 
+                use_container_width=True, 
+                hide_index=True,
+                column_config=col_configs
+            )
         else:
             st.warning(
-                f"No exact matches found for Site '{clean_site}'. Try another site ID."
+                f"No exact matches found for Site '{current_search}'. Try another site ID."
             )
     else:
         st.info("Please enter a site number above to view results.")
