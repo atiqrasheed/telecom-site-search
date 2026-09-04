@@ -23,7 +23,7 @@ st.markdown(
 
     /* Hover effect: Size increase & color highlight */
     div[data-testid="stPageLink"] a:hover {
-        transform: scale(1.06) !important; /* Increases size by 6% */
+        transform: scale(1.06) !important;
         background-color: #1f2937 !important;
         color: #38bdf8 !important;
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3) !important;
@@ -59,7 +59,10 @@ try:
     avail_col = [col for col in df.columns if "Availability" in col]
     availability_column = avail_col[0] if avail_col else df.columns[-1]
 
-    site_input = st.text_input("Enter Site ID:", "")
+    # Constrain the text box width using columns (1:3 ratio keeps input compact)
+    search_col, _ = st.columns([1, 3])
+    with search_col:
+        site_input = st.text_input("Enter Site ID:", "")
 
     # Check explicitly if input is not empty (allows '0')
     if site_input.strip() != "":
