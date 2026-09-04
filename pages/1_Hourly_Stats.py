@@ -9,6 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Initialize Session State variable for persistent search across page switches
 if "hourly_search_value" not in st.session_state:
     st.session_state["hourly_search_value"] = ""
 
@@ -116,7 +117,6 @@ try:
                 if plot_df["Time_Only"].isnull().all():
                     plot_df["Time_Only"] = plot_df[time_col].astype(str).str.split().str[-1]
 
-                # Custom clean Plotly line chart without Streamlit's default container controls
                 fig = px.line(
                     plot_df, 
                     x="Time_Only", 
@@ -128,10 +128,10 @@ try:
                 fig.update_layout(
                     margin=dict(l=20, r=20, t=20, b=20),
                     xaxis=dict(type='category'),
+                    yaxis=dict(range=[0, 102]),  # Caps 100% at top
                     hovermode="x unified"
                 )
 
-                # config={'displayModeBar': False} completely strips out graph icons
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
             col_configs = {
