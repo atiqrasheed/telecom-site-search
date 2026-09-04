@@ -9,7 +9,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Initialize Session State variable for persistent search across page switches
 if "hourly_search_value" not in st.session_state:
     st.session_state["hourly_search_value"] = ""
 
@@ -90,13 +89,14 @@ try:
         count = len(filtered_df)
 
         if count > 0:
-            numeric_avail = pd.to_numeric(filtered_df[availability_column], errors='coerce')
-            avg_value = round(numeric_avail.mean(), 2)
+            # Ensure numeric conversion handles zeros properly instead of stripping them
+            numeric_vals = pd.to_numeric(filtered_df[availability_column], errors='coerce').fillna(0)
+            avg_value = round(numeric_vals.mean(), 2)
 
             with metric_col:
                 st.metric(
                     label="Average Site Availability", 
-                    value=f"{avg_value}%" if pd.notna(avg_value) else "N/A"
+                    value=f"{avg_value}%"
                 )
 
             banner_col, toggle_col = st.columns([4, 1])
@@ -109,13 +109,17 @@ try:
                 st.subheader("📈 24-Hour Availability Trend")
                 
                 plot_df = filtered_df.copy()
-                plot_df[availability_column] = pd.to_numeric(plot_df[availability_column], errors='coerce')
+                plot_df[availability_column] = numeric_vals
                 
                 time_col = df_hourly.columns[0]
                 plot_df["Time_Only"] = pd.to_datetime(plot_df[time_col], errors="coerce").dt.strftime("%H:%M")
                 
                 if plot_df["Time_Only"].isnull().all():
                     plot_df["Time_Only"] = plot_df[time_col].astype(str).str.split().str[-1]
+
+                # Dynamic Y-axis lower bound: set 10-15 units below minimum recorded value
+                min_val = numeric_vals.min()
+                y_bottom = max(0, min_val - 15) if min_val > 15 else 0
 
                 fig = px.line(
                     plot_df, 
@@ -128,11 +132,15 @@ try:
                 fig.update_layout(
                     margin=dict(l=20, r=20, t=20, b=20),
                     xaxis=dict(type='category'),
-                    yaxis=dict(range=[0, 102]),  # Caps 100% at top
+                    yaxis=dict(range=[y_bottom, 101]),  # Adaptive lower bound, capped top
                     hovermode="x unified"
                 )
 
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+            # Ensure zeros explicitly print as "0" or "0.0" in the table UI
+            display_df = filtered_df.copy()
+            display_df[availability_column] = numeric_vals
 
             col_configs = {
                 df_hourly.columns[0]: st.column_config.TextColumn(width="small"),
@@ -141,7 +149,7 @@ try:
             }
 
             st.dataframe(
-                filtered_df, 
+                display_df, 
                 use_container_width=True, 
                 hide_index=True,
                 column_config=col_configs
