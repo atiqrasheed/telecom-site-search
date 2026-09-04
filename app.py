@@ -59,8 +59,8 @@ try:
     avail_col = [col for col in df.columns if "Availability" in col]
     availability_column = avail_col[0] if avail_col else df.columns[-1]
 
-    # Constrain the text box width using columns (1:3 ratio keeps input compact)
-    search_col, _ = st.columns([1, 3])
+    # Compact search input (~12.5% width)
+    search_col, _ = st.columns([1, 7])
     with search_col:
         site_input = st.text_input("Enter Site ID:", "")
 
