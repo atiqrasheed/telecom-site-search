@@ -1,4 +1,5 @@
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 st.set_page_config(
@@ -8,38 +9,29 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS styling
+if "hourly_search_value" not in st.session_state:
+    st.session_state["hourly_search_value"] = ""
+
 st.markdown(
     """
     <style>
-    /* Completely hide the sidebar container and collapse arrow */
     [data-testid="stSidebar"] { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
 
-    /* Target top navigation links for hover zoom & color effects */
     div[data-testid="stPageLink"] a {
         transition: all 0.25s ease-in-out !important;
         border-radius: 8px !important;
     }
 
-    /* Hover effect: Smooth scale up and background glow */
     div[data-testid="stPageLink"] a:hover {
-        transform: scale(1.06) !important; /* Increases size by 6% */
+        transform: scale(1.06) !important;
         background-color: #1f2937 !important;
         color: #38bdf8 !important;
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3) !important;
     }
 
-    /* Target the text label above input boxes */
-    div[data-testid="stTextInput"] label p {
-        font-size: 22px !important;
-        font-weight: bold !important;
-    }
-
-    /* Hide the Deploy button */
+    div[data-testid="stTextInput"] label p { font-size: 22px !important; font-weight: bold !important; }
     .stAppDeployButton { display: none !important; }
-
-    /* Hide header menu and footer */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -48,7 +40,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Top Navigation Bar
 col1, col2, col3 = st.columns([1, 1, 4])
 with col1:
     st.page_link("app.py", label="🔍 Daily Search", use_container_width=True)
@@ -74,50 +65,89 @@ def load_hourly_data():
 try:
     df_hourly = load_hourly_data()
 
-    # Identify the availability column dynamically
     avail_col = [col for col in df_hourly.columns if "Availability" in col or "%" in col]
     availability_column = avail_col[0] if avail_col else df_hourly.columns[-1]
 
-    site_id = st.text_input("Enter Site ID: ")
+    search_col, metric_col, _ = st.columns([1.5, 2, 4.5])
 
-    if site_id.strip() != "":
-        search_term = site_id.strip()
-        filtered_df = df_hourly[df_hourly['Site'].astype(str) == search_term].copy()
+    with search_col:
+        def update_hourly_input():
+            st.session_state["hourly_search_value"] = st.session_state["hourly_input_key"]
+
+        site_id = st.text_input(
+            "Enter Site ID: ", 
+            value=st.session_state["hourly_search_value"],
+            key="hourly_input_key",
+            on_change=update_hourly_input
+        )
+
+    current_search = st.session_state["hourly_search_value"].strip()
+
+    if current_search != "":
+        filtered_df = df_hourly[df_hourly['Site'].astype(str) == current_search].copy()
         
         count = len(filtered_df)
 
         if count > 0:
-            st.success(f"Found **{count}** exact matching hourly records for Site **{search_term}**")
-
-            # Calculate average and append summary row at bottom
             numeric_avail = pd.to_numeric(filtered_df[availability_column], errors='coerce')
             avg_value = round(numeric_avail.mean(), 2)
 
-            summary_row = {
-                filtered_df.columns[0]: "",
-                "Site": "AVERAGE SITE AVAILABILITY",
-                availability_column: f"{avg_value}%" if pd.notna(avg_value) else "N/A",
-            }
+            with metric_col:
+                st.metric(
+                    label="Average Site Availability", 
+                    value=f"{avg_value}%" if pd.notna(avg_value) else "N/A"
+                )
 
-            display_df = pd.concat(
-                [filtered_df, pd.DataFrame([summary_row])], ignore_index=True
-            )
+            banner_col, toggle_col = st.columns([4, 1])
+            with banner_col:
+                st.success(f"Found **{count}** exact matching hourly records for Site **{current_search}**")
+            with toggle_col:
+                show_graph = st.checkbox("📈 Convert to Graph", key="hourly_show_graph")
 
-            # Fit 3 columns tightly across screen width
+            if show_graph:
+                st.subheader("📈 24-Hour Availability Trend")
+                
+                plot_df = filtered_df.copy()
+                plot_df[availability_column] = pd.to_numeric(plot_df[availability_column], errors='coerce')
+                
+                time_col = df_hourly.columns[0]
+                plot_df["Time_Only"] = pd.to_datetime(plot_df[time_col], errors="coerce").dt.strftime("%H:%M")
+                
+                if plot_df["Time_Only"].isnull().all():
+                    plot_df["Time_Only"] = plot_df[time_col].astype(str).str.split().str[-1]
+
+                # Custom clean Plotly line chart without Streamlit's default container controls
+                fig = px.line(
+                    plot_df, 
+                    x="Time_Only", 
+                    y=availability_column,
+                    markers=True,
+                    labels={"Time_Only": "Time", availability_column: "Availability (%)"}
+                )
+                
+                fig.update_layout(
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    xaxis=dict(type='category'),
+                    hovermode="x unified"
+                )
+
+                # config={'displayModeBar': False} completely strips out graph icons
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
             col_configs = {
                 df_hourly.columns[0]: st.column_config.TextColumn(width="small"),
                 "Site": st.column_config.TextColumn(width="small"),
-                availability_column: st.column_config.TextColumn(width="small")
+                availability_column: st.column_config.TextColumn(alignment="left")
             }
 
             st.dataframe(
-                display_df, 
+                filtered_df, 
                 use_container_width=True, 
                 hide_index=True,
                 column_config=col_configs
             )
         else:
-            st.warning(f"No hourly records found for Site {search_term}.")
+            st.warning(f"No hourly records found for Site {current_search}.")
     else:
         st.info("Enter a site number above to display hourly stats.")
 
